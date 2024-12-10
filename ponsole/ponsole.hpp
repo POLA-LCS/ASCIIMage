@@ -12,23 +12,24 @@
    e.g ```LIGHT_AQUA``` references to ```LIGHT_BLUE``` color
 */
 enum Color {
-    BLACK = 0,
-    BLUE = 1,
-    GREEN = 2,
-    AQUA = 3,
-    RED = 4,
-    PURPLE = 5,
-    YELLOW = 6,
-    WHITE = 7,
-    GRAY = 8,
-    LIGHT_BLUE = 9,
-    LIGHT_GREEN = 10,
-    LIGHT_AQUA = 11,
-    LIGHT_RED = 12,
-    LIGHT_PURPLE = 13,
-    LIGHT_YELLOW = 14,
-    LIGHT_WHITE = 15,
-    AUTO = 16
+    BLACK,
+    BLUE,
+    GREEN,
+    AQUA,
+    RED,
+    PURPLE,
+    YELLOW,
+    WHITE,
+    GRAY,
+    GREY = GRAY,
+    LIGHT_BLUE,
+    LIGHT_GREEN,
+    LIGHT_AQUA,
+    LIGHT_RED,
+    LIGHT_PURPLE,
+    LIGHT_YELLOW,
+    LIGHT_WHITE,
+    AUTO
 };
 
 const char* Color_cstr(Color color) {
@@ -276,7 +277,7 @@ void Console::put(const char c, const COLORS& colors) {
 void Console::print(const char* cstr, const COLORS& colors) {
     COLORS last = get_colors();
     set_colors(colors);
-    fputs(cstr, stdout);
+    WriteConsole(handle, cstr, strlen(cstr), nullptr, nullptr);
     set_colors(last);
 }
 
