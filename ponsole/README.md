@@ -1,21 +1,21 @@
-# Ponsole v1.2
+# Winsole v1.2
 
-`Ponsole` is a C++ header that focus on a simple console management with WinAPI.
+`Winsole` is a C++ header that focus on a simple console management with WinAPI.
 
 ## Dependencies
 - Windows OS.
 
 ## How to install
-1. Copy the file `ponsole.hpp` in your project.
+1. Copy the file `Winsole.hpp` in your project.
 2. Make sure to include the file `winapi_tools.hpp` in the same directory.
 
 TIP: You can do:  
 ```
-Ponsole/  
-| ponsole.hpp  
+Winsole/  
+| winsole.hpp  
 | winapi_tools.hpp  
 ```
-and then `#include "Ponsole/ponsole.hpp"` 
+and then `#include "Winsole/winsole.hpp"` 
 
 ## Characteristics
 
@@ -45,7 +45,7 @@ Offers methods to:
 ## Usage example
 
 ```cpp
-#include "ponsole.hpp"
+#include "Winsole/winsole.hpp"
 
 int main() {
     Console console;

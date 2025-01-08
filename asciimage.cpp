@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
-#include "ponsole/ponsole.hpp"
+#include "ponsole/winsole.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
@@ -15,8 +15,8 @@ typedef unsigned char byte;
 struct RGBA {
     byte r, g, b, a = 255;
 
-    byte max() const { return (r > g ? (r > b ? r : b) : (g > b ? g : b)); }
-    byte min() const { return (r < g ? (r < b ? r : b) : (g < b ? g : b)); }
+    byte max_value() const { return (r > g ? (r > b ? r : b) : (g > b ? g : b)); }
+    byte min_value() const { return (r < g ? (r < b ? r : b) : (g < b ? g : b)); }
     float average() const { return (r + g + b) / 3.0f; }
 };
 
@@ -64,7 +64,7 @@ struct Image {
         if (color_array) delete[] color_array;
         color_array = new RGBA[image_size()];
         for (size_t b = 0, color = 0; b < size(); b += channels) {
-            color_array[color++] = {data[b], data[b + 1], data[b + 2], (channels == 4) ? data[b + 3] : 255};
+            color_array[color++] = {data[b], data[b + 1], data[b + 2], (channels == 4) ? data[b + 3] : static_cast<byte>(255)};
         }
     }
 
@@ -80,7 +80,7 @@ float map(float input, float x1, float x2, float y1, float y2) {
 std::string ascii_image(const Image& image, RGBA*& colors, const std::string& ascii_map) {
     std::string ascii_output;
     for(size_t ci = 0, row = 1; ci < image.image_size(); ci++) {
-        byte grey = (colors[ci].max() + colors[ci].min()) / 2;
+        byte grey = (colors[ci].max_value() + colors[ci].min_value()) / 2;
         byte index = map(grey, 0, 255, 0, ascii_map.length() - 1);
         if(ci >= (row * image.width)) {
             ascii_output += '\n';
@@ -91,10 +91,10 @@ std::string ascii_image(const Image& image, RGBA*& colors, const std::string& as
     return ascii_output;
 }
 
-void print_color_image(Console& ponsole, const Image& image, RGBA*& colors, const std::vector<Color>& colormap) {
+void print_color_image(Winsole& winsole, const Image& image, RGBA*& colors, const std::vector<Color>& colormap) {
     size_t map_size = colormap.size();
     for(size_t ci = 0, row = 1; ci < image.image_size(); ci++) {
-        byte grey = (colors[ci].max() + colors[ci].min()) / 2;
+        byte grey = (colors[ci].max_value() + colors[ci].min_value()) / 2;
         size_t index = static_cast<size_t>(map(grey, 0, 255, 0, map_size - 1));
         Color color = colormap[index];
 
@@ -103,11 +103,11 @@ void print_color_image(Console& ponsole, const Image& image, RGBA*& colors, cons
             row++;
         }
 
-        ponsole.put(' ', {AUTO, color});
+        winsole.put(' ', {AUTO, color});
     }
 }
 
-void print_color_ascii(Console& ponsole, const std::string& ascii_image, RGBA*& colors, const Image& image, const std::vector<Color>& colormap) {
+void print_color_ascii(Winsole& winsole, const std::string& ascii_image, RGBA*& colors, const Image& image, const std::vector<Color>& colormap) {
     size_t map_size = colormap.size();
     size_t ascii_index = 0;
 
@@ -118,16 +118,16 @@ void print_color_ascii(Console& ponsole, const std::string& ascii_image, RGBA*& 
             continue;
         }
 
-        byte grey = (colors[ci].max() + colors[ci].min()) / 2;
+        byte grey = (colors[ci].max_value() + colors[ci].min_value()) / 2;
         size_t index = static_cast<size_t>(map(grey, 0, 255, 0, map_size - 1));
         Color color = colormap[index];
 
-        ponsole.put(ascii_image[ascii_index], {color, AUTO});
+        winsole.put(ascii_image[ascii_index], {color, AUTO});
         ascii_index++;
     }
 }
 
-void fast_print(const Console& console, const std::string& buffer) {
+void fast_print(const Winsole& console, const std::string& buffer) {
     WriteConsole(console.get_handle(), buffer.c_str(), buffer.length(), nullptr, nullptr);
 }
 
@@ -140,8 +140,8 @@ void print_help() {
     printf("    asciimage <input> <mode> [map]    Prints an image in the selected mode.\n");
     printf("\n[MODES]\n");
     printf("    ASCII    Maps each pixel of the image with an ascii character  (BLINK FAST).\n");
-    printf("    COLOR    Uses Ponsole to print the colored image               (SLOW).\n");
-    printf("    ASCOL    Uses Ponsole to tint the ASCII result with a colormap (SLOW as COLOR).\n");
+    printf("    COLOR    Uses winsole to print the colored image               (SLOW).\n");
+    printf("    ASCOL    Uses winsole to tint the ASCII result with a colormap (SLOW as COLOR).\n");
     printf("\n[MAPS]\n");
     printf("    A map is a string used by the program to generate a custom output.\n");
     printf("    If space character (32) is wanted to be in the ascii map double quotes are needed.\n");
@@ -181,7 +181,8 @@ int main(int argc, char* argv[]) {
     }
 
     // BASIC CONSOLE SETUP
-    Console console; if(!console.init()) {
+    Winsole console;
+    if(!console.init()) {
         fprintf(stderr, "[!] Failed to init the console.\n");
         return 1;
     }

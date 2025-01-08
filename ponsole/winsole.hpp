@@ -6,7 +6,7 @@
 #include <cwchar>
 #include "winapi_tools.hpp"
 
-/* ### Console color index references
+/* ### Winsole color index references
 *  If colormap changes:
    e.g ```BLACK``` may be ```any color``` or
    e.g ```LIGHT_AQUA``` references to ```LIGHT_BLUE``` color
@@ -56,7 +56,7 @@ const char* Color_cstr(Color color) {
     return "UNKNOWN";
 }
 
-/* ### Console cell colors
+/* ### Winsole cell colors
 ```fore(ground)``` and ```back(ground)```
 */
 struct COLORS {
@@ -75,7 +75,7 @@ cwstr wide(const char* cstr) {
     return wide_string;
 }
 
-/* ### Console's font handler class
+/* ### Winsole's font handler class
 *  Can be modified 
 */
 class Font {
@@ -154,13 +154,13 @@ bool Font::update() {
     return SetCurrentConsoleFontEx(handle, max_window, &info);
 }
 
-// Console class to handle the console, needs to be Console::init
-class Console {
+// Winsole class to handle the console, needs to be Winsole::init
+class Winsole {
 public:
-    Console() = default;
-    Console(const Console& copy);
-    Console(Console&& move) noexcept;
-    ~Console();
+    Winsole() = default;
+    Winsole(const Winsole& copy);
+    Winsole(Winsole&& move) noexcept;
+    ~Winsole();
     
     bool init();
     COORD get_max_raw_size() const;
@@ -186,7 +186,7 @@ private:
     CONSOLE_SCREEN_BUFFER_INFOEX info;
 };
 
-bool Console::init() {
+bool Winsole::init() {
     handle = GetStdHandle(STD_OUTPUT_HANDLE);
     if(handle == INVALID_HANDLE_VALUE) {
         fprintf(stderr, "Cannot get the console handle.\n");
@@ -206,82 +206,82 @@ bool Console::init() {
     return true;
 }
 
-Console::~Console() {
+Winsole::~Winsole() {
     if(handle != INVALID_HANDLE_VALUE) {
         FreeConsole();
     }
 }
 
-Console::Console(const Console& copy) : handle(copy.handle), info(copy.info) {}
+Winsole::Winsole(const Winsole& copy) : handle(copy.handle), info(copy.info) {}
 
-Console::Console(Console&& move) noexcept : handle(move.handle), info(move.info) {
+Winsole::Winsole(Winsole&& move) noexcept : handle(move.handle), info(move.info) {
     move.handle = nullptr;
 }
 
-// Console getters
-HANDLE Console::get_handle() const {
+// Winsole getters
+HANDLE Winsole::get_handle() const {
     return handle;
 }
 
-COORD Console::get_max_raw_size() const {
+COORD Winsole::get_max_raw_size() const {
     return GetLargestConsoleWindowSize(handle);
 }
 
-const SMALL_RECT& Console::get_raw_size() const {
+const SMALL_RECT& Winsole::get_raw_size() const {
     return info.srWindow;
 }
 
-const COORD& Console::get_size() const {
+const COORD& Winsole::get_size() const {
     return info.dwMaximumWindowSize;
 }
 
-Color Console::get_foreground() const {
+Color Winsole::get_foreground() const {
     return (Color)(info.wAttributes & 0x0F);
 }
 
-Color Console::get_background() const {
+Color Winsole::get_background() const {
     return (Color)(info.wAttributes & 0xF0);
 }
 
-const COLORS Console::get_colors() const {
+const COLORS Winsole::get_colors() const {
     return { get_foreground(), get_background() };
 }
 
-// Console setters
+// Winsole setters
 
-void Console::set_size(const COORD& size) {
+void Winsole::set_size(const COORD& size) {
     info.dwMaximumWindowSize = size;
 }
 
-void Console::set_raw_size(const SMALL_RECT& size) {
+void Winsole::set_raw_size(const SMALL_RECT& size) {
     info.srWindow = size;
     info.dwSize.X = info.srWindow.Right;
     info.dwSize.Y = info.srWindow.Bottom;
 }
 
-bool Console::set_colors(const COLORS& colors) {
+bool Winsole::set_colors(const COLORS& colors) {
     WORD new_attributes = (colors.fore != AUTO) ? colors.fore : (info.wAttributes & 0x0F);
     new_attributes |= (colors.back != AUTO) ? (colors.back << 4) : (info.wAttributes & 0xF0);
 
     return SetConsoleTextAttribute(handle, new_attributes);
 }
 
-// Console methods
-void Console::put(const char c, const COLORS& colors) {
+// Winsole methods
+void Winsole::put(const char c, const COLORS& colors) {
     COLORS last = get_colors();
     set_colors(colors);
     putc(c, stdout);
     set_colors(last);
 }
 
-void Console::print(const char* cstr, const COLORS& colors) {
+void Winsole::print(const char* cstr, const COLORS& colors) {
     COLORS last = get_colors();
     set_colors(colors);
     WriteConsole(handle, cstr, strlen(cstr), nullptr, nullptr);
     set_colors(last);
 }
 
-bool Console::clear() {
+bool Winsole::clear() {
     COORD topLeft = {0, 0};
     DWORD charsWritten;
     DWORD consoleSize = info.dwSize.X * info.dwSize.Y;
@@ -304,6 +304,6 @@ bool Console::clear() {
     return true;
 }
 
-bool Console::update() {
+bool Winsole::update() {
     return SetConsoleScreenBufferInfoEx(handle, &info);
 }
