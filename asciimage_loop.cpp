@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <conio.h>
 #include "ponsole/ponsole.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -159,6 +160,7 @@ void print_help() {
 #define DEFAULT_ASCII " ._-3#@"
 #define DEFAULT_COLOR_MAP {BLACK, BLACK, BLACK, GREY, GREY, BLUE, LIGHT_BLUE, AQUA, LIGHT_AQUA, WHITE, WHITE, WHITE}
 
+#define LOOP while(true) if(kbhit()) break
 int main(int argc, char* argv[]) {
     argc -= 1;
 
@@ -176,6 +178,7 @@ int main(int argc, char* argv[]) {
         // HELP
         if(str_args[i] == "-h" || str_args[i] == "--help") {
             print_help();
+            LOOP;
             return 0;
         }
     }
@@ -183,6 +186,7 @@ int main(int argc, char* argv[]) {
     // BASIC CONSOLE SETUP
     Console console; if(!console.init()) {
         fprintf(stderr, "[!] Failed to init the console.\n");
+        LOOP;
         return 1;
     }
 
@@ -198,6 +202,7 @@ int main(int argc, char* argv[]) {
     Image input_image(input_path.c_str());
     if(!input_image.read()) {
         fprintf(stderr, "[!] Failed to read image.\n");
+        LOOP;
         return 1;
     }
 
@@ -205,6 +210,7 @@ int main(int argc, char* argv[]) {
     input_image.get_color_array(colors);
     if(!colors) {
         fprintf(stderr, "[!] Failed to get color array.\n");
+        LOOP;
         return 1;
     }
 
@@ -214,6 +220,7 @@ int main(int argc, char* argv[]) {
         ascii_map = (argc == 2) ? DEFAULT_ASCII : str_args[2];
         std::string ascii_output = ascii_image(input_image, colors, ascii_map);
         fast_print(console, ascii_output);
+        LOOP;
         return 0;
     }
     
@@ -235,7 +242,7 @@ int main(int argc, char* argv[]) {
             std::string ascii_output = ascii_image(input_image, colors, ascii_map);
             print_color_ascii(console, ascii_output, colors, input_image, colormap);
         }
-
+        LOOP;
         return 0;
     }
 
