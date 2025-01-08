@@ -4,7 +4,7 @@ No linux :(
 
 ## Dependencies
 - [stb](https://github.com/nothings/stb) fast and easy image reading.
-- [ponsole](https://github.com/POLA-LCS/ponsole) for printing color characters in the windows console.
+- [ponsole](https://github.com/POLA-LCS/ponsole) (old version) for printing color characters in the windows console.
 
 ## Get started
 Just clone it anywhere and run the `make.bat` file.  
