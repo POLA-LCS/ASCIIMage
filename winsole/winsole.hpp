@@ -3,8 +3,13 @@
 #include <windows.h>
 #include <cstdio>
 #include <cwchar>
+#include <cstring>
 #include <string>
-#include "winapi_tools.hpp"
+#include <vector>
+
+#ifdef NEEDS_REDEFINE
+    #include "winapi_tools.hpp"
+#endif
 
 enum Color {
     BLACK, BLUE, GREEN, AQUA, RED, PURPLE, YELLOW, WHITE,
@@ -20,7 +25,7 @@ inline const char* Color_cstr(Color color) {
         case GREEN: return "GREEN"; case AQUA: return "AQUA";
         case RED: return "RED"; case PURPLE: return "PURPLE";
         case YELLOW: return "YELLOW"; case WHITE: return "WHITE";
-        case GRAY: case GREY: return "GRAY";
+        case GRAY: return "GREY";
         case LIGHT_BLUE: return "LIGHT_BLUE"; case LIGHT_GREEN: return "LIGHT_GREEN";
         case LIGHT_AQUA: return "LIGHT_AQUA"; case LIGHT_RED: return "LIGHT_RED";
         case LIGHT_PURPLE: return "LIGHT_PURPLE"; case LIGHT_YELLOW: return "LIGHT_YELLOW";
@@ -38,17 +43,18 @@ using cwstr = const wchar_t*;
 
 inline std::wstring wide(const char* cstr) {
     int len = MultiByteToWideChar(CP_UTF8, 0, cstr, -1, nullptr, 0);
+    if(len == 0) return L"";
     std::wstring wstr(len, L'\0');
     MultiByteToWideChar(CP_UTF8, 0, cstr, -1, &wstr[0], len);
-    wstr.pop_back(); // eliminar terminador nulo
+    wstr.pop_back();
     return wstr;
 }
 
 class Font {
 public:
     Font() = default;
-    Font(const Font& copy) = default;
-    Font(Font&& move) noexcept = default;
+    Font(const Font&) = default;
+    Font(Font&&) noexcept = default;
 
     bool init(HANDLE handle, bool max_window = false);
     COORD get_size() const;
@@ -91,7 +97,7 @@ inline void Font::set_size(const COORD& size) {
 
 inline void Font::set_font(cwstr font_name, UINT weight) {
     info.FontWeight = weight;
-    wcsncpy_s(info.FaceName, font_name, LF_FACESIZE);
+    wcsncpy_s(info.FaceName, font_name, LF_FACESIZE - 1);
 }
 
 inline void Font::set_font(const char* font_name, UINT weight) {
@@ -136,7 +142,7 @@ private:
 };
 
 inline Winsole::~Winsole() {
-    if (handle && handle != INVALID_HANDLE_VALUE) {
+    if(handle && handle != INVALID_HANDLE_VALUE) {
         FreeConsole();
     }
 }
@@ -187,24 +193,29 @@ inline COLORS Winsole::get_colors() const {
 
 inline void Winsole::set_size(const COORD& size) {
     info.dwMaximumWindowSize = size;
+
 }
 
 inline void Winsole::set_raw_size(const SMALL_RECT& size) {
     info.srWindow = size;
-    info.dwSize.X = size.Right;
-    info.dwSize.Y = size.Bottom;
+    info.dwSize.X = size.Right + 1;
+    info.dwSize.Y = size.Bottom + 1;
 }
 
 inline bool Winsole::set_colors(const COLORS& colors) {
+    if(!handle || handle == INVALID_HANDLE_VALUE) return false;
     WORD attrs = info.wAttributes;
-    if (colors.fore != AUTO) attrs = (attrs & 0xF0) | colors.fore;
-    if (colors.back != AUTO) attrs = (attrs & 0x0F) | (colors.back << 4);
+    if (colors.fore != AUTO) attrs = (attrs & 0xF0) | (colors.fore & 0x0F);
+    if (colors.back != AUTO) attrs = (attrs & 0x0F) | ((colors.back & 0x0F) << 4);
     return SetConsoleTextAttribute(handle, attrs);
 }
 
 inline void Winsole::put(char c, const COLORS& colors) {
     COLORS last = get_colors();
-    if(set_colors(colors)) putc(c, stdout);
+    if(set_colors(colors)) {
+        DWORD written;
+        WriteConsoleA(handle, &c, 1, &written, nullptr);
+    }
     set_colors(last);
 }
 
@@ -217,6 +228,8 @@ inline void Winsole::print(const char* cstr, const COLORS& colors) {
 }
 
 inline bool Winsole::clear() {
+    if(!handle || handle == INVALID_HANDLE_VALUE) return false;
+
     COORD topLeft = {0, 0};
     DWORD written;
     DWORD size = info.dwSize.X * info.dwSize.Y;
